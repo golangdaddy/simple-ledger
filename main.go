@@ -16,6 +16,8 @@ const (
 
 func main() {
 
+	os.Mkdir("chaindata", 0777)
+
 	args := os.Args
 	if len(args) != 2 {
 		log.Fatal("No chain name arguement provided!")
