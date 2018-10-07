@@ -4,17 +4,26 @@ import (
 	"fmt"
 )
 
+func NewOutputIssue(name string, units, maxQuantity int) OutputPayload {
+	return OutputIssue{
+		Type: "issue",
+		Name: name,
+		Quantity: maxQuantity,
+	}
+}
+
 type OutputIssue struct {
+	Type string `json:"type"`
 	// unique name of token
-	Name string
-	// divisible units of the token
-	Units int
-	// quantity of the token to issue
-	Quantity int
-	// whether quantities of the asset can be issued in the future
-	Open bool
+	Name string `json:"name"`
+	// max quantity of the token to issue
+	Quantity int `json:"quantity"`
+}
+
+func (self OutputIssue) PayloadType() string {
+	return self.Type
 }
 
 func (self OutputIssue) Serialize() string {
-	return fmt.Sprintf("%s:%d:%d:%v", self.Name, self.Units, self.Quantity, self.Open)
+	return fmt.Sprintf("%s:%s:%d", self.Type, self.Name, self.Quantity)
 }

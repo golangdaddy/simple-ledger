@@ -6,6 +6,7 @@ import (
 
 // Defines an interface for instructing the output to do something
 type OutputPayload interface {
+	PayloadType() string
 	Serialize() string
 }
 
