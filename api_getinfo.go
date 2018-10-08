@@ -19,17 +19,10 @@ type ChainInfo struct {
 }
 
 func (self *ChainInfo) Permissions(address string) map[string]bool {
-	self.RLock()
-	defer self.RUnlock()
 	return self.addressPermissions[address]
 }
 
 func (self *ChainInfo) GrantPermissions(address string, actions []string) {
-	self.Lock()
-	defer self.Unlock()
-	if self.addressPermissions == nil {
-		self.addressPermissions = map[string]map[string]bool{}
-	}
 	if self.addressPermissions[address] == nil {
 		self.addressPermissions[address] = map[string]bool{}
 	}
@@ -39,11 +32,6 @@ func (self *ChainInfo) GrantPermissions(address string, actions []string) {
 }
 
 func (self *ChainInfo) RevokePermissions(address string, actions []string) {
-	self.Lock()
-	defer self.Unlock()
-	if self.addressPermissions == nil {
-		self.addressPermissions = map[string]map[string]bool{}
-	}
 	if self.addressPermissions[address] == nil {
 		self.addressPermissions[address] = map[string]bool{}
 	}
@@ -53,20 +41,10 @@ func (self *ChainInfo) RevokePermissions(address string, actions []string) {
 }
 
 func (self *ChainInfo) Index(k string, tx *models.TX) {
-	self.Lock()
-	defer self.Unlock()
-	if self.txIndex == nil {
-		self.txIndex = map[string]*models.TX{}
-	}
 	self.txIndex[k] = tx
 }
 
 func (self *ChainInfo) Indexed(k string) (*models.TX, error) {
-	self.RLock()
-	defer self.RUnlock()
-	if self.txIndex == nil {
-		return nil, fmt.Errorf("TX NOT FOUND FOR KEY '%s'", k)
-	}
 	tx, ok := self.txIndex[k]
 	if !ok {
 		return nil, fmt.Errorf("NO TX FOUND FOR KEY '%s'", k)
