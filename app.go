@@ -13,7 +13,7 @@ import (
 type App struct {
 	badgerDB *badger.DB
 	chainName string
-	info *models.GetInfo
+	info *ChainInfo
 	wallet *models.Wallet
 	params map[string]interface{}
 	txChannel chan *models.TX

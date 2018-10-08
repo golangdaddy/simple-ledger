@@ -1,10 +1,21 @@
 package main
 
 import (
+	"fmt"
 	"encoding/json"
 	//
 	"github.com/dgraph-io/badger"
+	//
+	"github.com/golangdaddy/simple-ledger/models"
 )
+
+// Update creates or updates the specified key
+func (app *App) PutBlock(block *models.MainBlock) error {
+	return app.Update(
+		fmt.Sprintf("block_%v", block.BlockHeight),
+		block.Serial(),
+	)
+}
 
 // Update creates or updates the specified key
 func (app *App) Update(k string, v []byte) error {

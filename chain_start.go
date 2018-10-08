@@ -85,7 +85,6 @@ func (app *App) blockHandler() {
 		block := <- app.blockChannel
 
 		block.BlockHash = block.Hash()
-		serial := block.Serial()
 
 		app.DebugJSON(block)
 
@@ -96,7 +95,7 @@ func (app *App) blockHandler() {
 			app.info.BlockHash = block.BlockHash
 		app.info.Unlock()
 
-		if err := app.Update(block.BlockHash, serial); err != nil {
+		if err := app.PutBlock(block); err != nil {
 			panic(err)
 		}
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/golangdaddy/tarantula/router/common"
 	"github.com/golangdaddy/tarantula/router/standard"
 	//
-	"github.com/golangdaddy/simple-ledger/models"
+//	"github.com/golangdaddy/simple-ledger/models"
 )
 
 func (app *App) httpServer() {
@@ -25,12 +25,12 @@ func (app *App) httpServer() {
 		},
 	)
 
-	root.Add("/sdjfjhj").POST(
+	root.Add("/getinfo").GET(
 		app.apiGetInfo,
 	).Describe(
 		"Gets the info about the chain, or it gets the hose again!",
 	).Response(
-		models.GetInfo{},
+		ChainInfo{},
 	)
 
 	rpcport, err := app.IntParam("rpcport")

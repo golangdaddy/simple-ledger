@@ -15,7 +15,10 @@ func initApp(chainName string) (app *App, err error) {
 		params: map[string]interface{}{},
 		txChannel: make(chan *models.TX),
 		blockChannel: make(chan *models.MainBlock),
-		info: &models.GetInfo{},
+		info: &ChainInfo{
+			txIndex: map[string]*models.TX{},
+			addressPermissions: map[string]map[string]bool{},
+		},
 	}
 
 	// temp
