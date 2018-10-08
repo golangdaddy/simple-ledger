@@ -1,7 +1,7 @@
 # simple-ledger
 A ledger I am building for fun/example of my skills
 
-### updates
+### Updates
 
 This is a work-in-progress.
 
@@ -9,6 +9,12 @@ This chain will be permissioned, distributed, and will support sidechains someho
 
 there is a http server running on port 6789
 
+### Running the daemon
+
 ```
 go build && ./simple-ledger <chainName>
 ```
+
+### HTTP API
+
+GET /getinfo
