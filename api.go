@@ -42,6 +42,29 @@ func (app *App) httpServer() {
 		models.MainBlock{},
 	)
 
+	permission := root.Add("/permission")
+
+		permission.Add("/grant").GET(
+			app.apiPermissionGrant,
+		).Describe(
+			"Grants specified actions to the given address.",
+		).Body(
+			&common.Payload{
+				"address": validation.Hex256(),
+				"actions": validation.ArrayString(),
+			},
+		)
+
+	create := root.Add("/create")
+
+		create.Add("/keypair").GET(
+			app.apiCreateKeypair,
+		).Describe(
+			"Creates a new keypair that is added to the wallet.",
+		).Response(
+			models.Address{},
+		)
+
 	rpcport, err := app.IntParam("rpcport")
 	if err != nil {
 		panic(err)

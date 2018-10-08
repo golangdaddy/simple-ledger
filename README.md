@@ -17,4 +17,14 @@ go build && ./simple-ledger <chainName>
 
 ### HTTP API
 
-GET /getinfo
+GET /info
+
+GET /block/<blockHeight>
+
+GET /create/keypair
+
+POST /permission/grant
+{
+	"address": <address>,
+	"actions": ["send", "receive", "mine"],
+}

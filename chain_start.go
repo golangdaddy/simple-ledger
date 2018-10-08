@@ -78,27 +78,20 @@ func (app *App) initChain() {
 			BlockHash: seed,
 		}
 		block = block.Next(app.wallet.Addresses[0], CONST_COINBASE_REWARD)
+		// store the seed in block 0
 		if err := app.Update("block_0", []byte(block.PrevBlockHash)); err != nil {
 			panic(err)
 		}
 		block.Hash()
 		app.blockChannel <- block
+		log.Print("Genesis block created...")
+
 	}
 
-	log.Print("Genesis block created...")
-
-	var prevBlockHash string
-
 	for {
-		prevBlockHash = block.BlockHash
-
 		// create a new block
 		block = block.Next(app.wallet.Addresses[0], CONST_COINBASE_REWARD)
 		log.Print("Producing new block with height ", block.BlockHeight)
-
-		if prevBlockHash != block.PrevBlockHash {
-			panic("INVALID")
-		}
 
 		timer := time.NewTimer(duration)
 
@@ -127,8 +120,10 @@ func (app *App) initChain() {
 
 }
 
+// parseTransaction applies any consequences of the transaction if it is valid
 func (app *App) parseTransaction(tx *models.TX) error {
 
+	// index the transaction based on it's hash
 	app.info.Lock()
 		app.info.Index(tx.Txid, tx)
 	app.info.Unlock()
@@ -165,18 +160,19 @@ func (app *App) parseTransaction(tx *models.TX) error {
 	return nil
 }
 
+// blockHandler parses all blocks.
 func (app *App) blockHandler() {
 
 	log.Print("Waiting for new blocks...")
 
 	for {
 		block := <- app.blockChannel
-
+/*
 		log.Print("New Block:")
 		log.Print("")
 		app.DebugJSON(block)
 		log.Print("")
-
+*/
 		// only write to disk if this block is new
 		if err := app.PutBlock(block); err != nil {
 			panic(err)
@@ -192,8 +188,4 @@ func (app *App) blockHandler() {
 //		log.Print("Written to database!")
 	}
 
-}
-
-func (app *App) loadChain() {
-	log.Print("Loading chain...")
 }

@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"crypto/rand"
 	"crypto/sha512"
 	//
 	"github.com/tyler-smith/go-bip32"
@@ -28,7 +29,8 @@ func (address *Address) Address() string {
 }
 
 func NewAddress() (*Address, error) {
-	seed := []byte("92r1g93fyg0we08§eyg")
+	seed := make([]byte, 64)
+	rand.Read(seed)
 	key, err := keyFromSeed(seed, 10, 1)
 	if err != nil {
 		return nil, err

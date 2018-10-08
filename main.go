@@ -53,19 +53,18 @@ func main() {
 
 			}
 
-			app.initChain()
-
 		} else {
 			panic(err)
 		}
 	}
 
+	// write parameters to disk
 	err = ioutil.WriteFile(app.Filesystem("params.dat"), []byte(""), 0777)
 	if err != nil {
 		panic(err)
 	}
 
-	app.loadChain()
+	app.initChain()
 
 	<- make(chan bool)
 

@@ -29,6 +29,11 @@ func (app *App) Filesystem(path string) string {
 	return fmt.Sprintf("%s/%s", chainData, path)
 }
 
+func (app *App) SendTransaction(tx *models.TX) {
+	tx.Txid = tx.Hash()
+	app.txChannel <- tx
+}
+
 func (app *App) DebugJSON(x interface{}) {
 	b, _ := json.Marshal(x)
 	log.Print(string(b))
