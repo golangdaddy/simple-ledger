@@ -11,6 +11,16 @@ import (
 
 // Update creates or updates the specified key
 func (app *App) PutBlock(block *models.MainBlock) error {
+	if block.FromDisk() {
+		return nil
+	}
+	err := app.Update(
+		fmt.Sprintf("chain_%s_%s", block.PrevBlockHash, block.BlockHash),
+		[]byte(fmt.Sprintf("%d", block.BlockHeight)),
+	)
+	if err != nil {
+		panic(err)
+	}
 	return app.Update(
 		fmt.Sprintf("block_%v", block.BlockHeight),
 		block.Serial(),
@@ -60,15 +70,15 @@ func (app *App) Get(k string, dst interface{}) ([]byte, error) {
 		return nil, err
 	}
 
+	// Commit the transaction and check for error.
+	if err := txn.Commit(nil); err != nil {
+		return nil, err
+	}
+
 	if dst != nil {
 		if err := json.Unmarshal(value, dst); err != nil {
 			return nil, err
 		}
-	}
-
-	// Commit the transaction and check for error.
-	if err := txn.Commit(nil); err != nil {
-		return nil, err
 	}
 
 	return value, nil

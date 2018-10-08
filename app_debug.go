@@ -12,11 +12,11 @@ func (app *App) debugTranactions() {
 
 	for {
 		time.Sleep(2 * time.Second)
-
+/*
 		app.info.RLock()
 			app.DebugJSON(app.info)
 		app.info.RUnlock()
-
+*/
 		tx := &models.TX{
 			Inputs: []models.Input{
 

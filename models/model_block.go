@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"log"
 	"time"
 	"encoding/json"
 	//
@@ -17,8 +16,29 @@ type MainBlock struct {
 	PrevBlockHash string `json:"prevBlockHash"`
 	MerkleRoot string `json:"merkleRoot"`
 	TxCount int `json:"txCount"`
-	transactions []*TX `json:"-"`
 	Transactions []string `json:"transactions"`
+	transactions []*TX
+	fromDisk bool
+	tree *merkletree.Tree
+}
+
+func (block *MainBlock) FromDisk() bool {
+	return block.fromDisk
+}
+
+func ParseBlock(serial []interface{}) *MainBlock {
+
+	block := &MainBlock{
+		fromDisk: true,
+		BlockHeight: int(serial[0].(float64)),
+		Timestamp: int64(serial[1].(float64)),
+		PrevBlockHash: serial[2].(string),
+		TxCount: int(serial[3].(float64)),
+		MerkleRoot: serial[4].(string),
+		//Transactions = serial[5].([]interface{})
+	}
+	block.Hash()
+	return block
 }
 
 func (block *MainBlock) AddCoinbase(address *Address, reward float64) {
@@ -37,8 +57,10 @@ func (block *MainBlock) AddCoinbase(address *Address, reward float64) {
 
 func (block *MainBlock) Next(address *Address, reward float64) *MainBlock {
 	nextBlock := &MainBlock{
+		tree: merkletree.New(sha3.New256),
+		Timestamp: time.Now().UTC().Unix(),
 		BlockHeight: block.BlockHeight + 1,
-		PrevBlockHash: block.Hash(),
+		PrevBlockHash: block.BlockHash,
 	}
 	nextBlock.AddCoinbase(address, reward)
 	return nextBlock
@@ -46,17 +68,15 @@ func (block *MainBlock) Next(address *Address, reward float64) *MainBlock {
 
 func (block *MainBlock) AddTX(tx *TX) {
 
-	log.Print("Including transaction in block: "+tx.Hash())
+	//log.Print("Including transaction in block: "+tx.Hash())
 
 	block.transactions = append(
 		block.transactions,
 		tx,
 	)
 
-	tree := merkletree.New(sha3.New256)
-
 	for _, tx := range block.transactions {
-		tree.Add(
+		block.tree.Add(
 			"",
 			tx.Serialize(),
 		)
@@ -65,14 +85,17 @@ func (block *MainBlock) AddTX(tx *TX) {
 	// update block details
 	block.TxCount++
 	block.Timestamp = time.Now().UTC().Unix()
-	block.MerkleRoot = fmt.Sprintf(
-		"%x",
-		tree.Root(),
-	)
 
 }
 
-func (block *MainBlock) Hash() string {
+func (block *MainBlock) Hash() {
+
+	if !block.fromDisk {
+		block.MerkleRoot = fmt.Sprintf(
+			"%x",
+			block.tree.Root(),
+		)
+	}
 
 	b, _ := json.Marshal(block.HeaderArray())
 
@@ -82,7 +105,7 @@ func (block *MainBlock) Hash() string {
 		b = h.Sum(nil)
 	}
 
-	return fmt.Sprintf("%x", b)
+	block.BlockHash = fmt.Sprintf("%x", b)
 }
 
 func (block *MainBlock) HeaderArray() []interface{} {
@@ -99,19 +122,17 @@ func (block *MainBlock) HeaderArray() []interface{} {
 func (block *MainBlock) Serial() []byte {
 
 	block.Transactions = make([]string, len(block.transactions))
-	for _, tx := range block.transactions {
-		block.Transactions = append(
-			block.Transactions,
-			tx.Hash(),
-		)
+	for x, tx := range block.transactions {
+		block.Transactions[x] = tx.Hash()
 	}
 
-	b, _ := json.Marshal(
-		append(
-			block.HeaderArray(),
-			block.Transactions,
-		),
+	serial := append(
+		block.HeaderArray(),
+		block.BlockHash,
+		block.Transactions,
 	)
+
+	b, _ := json.Marshal(serial)
 
 	return b
 }

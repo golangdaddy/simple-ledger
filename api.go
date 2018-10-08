@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	//
+	"github.com/golangdaddy/tarantula/web/validation"
 	"github.com/golangdaddy/tarantula/log/testing"
 	"github.com/golangdaddy/tarantula/router/common"
 	"github.com/golangdaddy/tarantula/router/standard"
 	//
-//	"github.com/golangdaddy/simple-ledger/models"
+	"github.com/golangdaddy/simple-ledger/models"
 )
 
 func (app *App) httpServer() {
@@ -25,12 +26,20 @@ func (app *App) httpServer() {
 		},
 	)
 
-	root.Add("/getinfo").GET(
+	root.Add("/info").GET(
 		app.apiGetInfo,
 	).Describe(
 		"Gets the info about the chain, or it gets the hose again!",
 	).Response(
 		ChainInfo{},
+	)
+
+	root.Add("/block").Param(validation.Int(), "blockHeight").GET(
+		app.apiGetBlock,
+	).Describe(
+		"Gets the block at the specified height.",
+	).Response(
+		models.MainBlock{},
 	)
 
 	rpcport, err := app.IntParam("rpcport")

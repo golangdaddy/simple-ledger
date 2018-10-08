@@ -8,8 +8,54 @@ import (
 	"github.com/golangdaddy/simple-ledger/models"
 )
 
+func (app *App) rescanChain() (block *models.MainBlock) {
+
+	b, err := app.Get("block_0", nil)
+	if err != nil {
+		log.Print("Failed to locate Genesis block!")
+		return
+	}
+
+	lastHash := string(b)
+	app.chainUID = lastHash
+
+	log.Print("Scanning chain with genesis ID: "+lastHash)
+
+	for x := 1; x == x; x++ {
+
+		k := fmt.Sprintf("block_%v", x)
+
+		log.Print("Getting block: "+k)
+
+		serial := []interface{}{}
+		_, err := app.Get(
+			k,
+			&serial,
+		)
+		if err != nil {
+			log.Print("Failed to locate: "+k)
+			break
+		}
+
+		block = models.ParseBlock(serial)
+
+		if lastHash != block.PrevBlockHash {
+			log.Print("BLOCKCHAIN IS BROKEN")
+			log.Print("'"+lastHash+"' != '"+block.PrevBlockHash+"'")
+			return nil
+		}
+
+		lastHash = block.BlockHash
+
+		app.blockChannel <- block
+
+	}
+
+	return block
+}
+
 func (app *App) initChain() {
-	log.Print("Creating chain...")
+	log.Printf("Creating chain %s...", app.chainName)
 
 	go app.blockHandler()
 
@@ -23,16 +69,36 @@ func (app *App) initChain() {
 		panic(err)
 	}
 
-	// make genesis block, send it to the block handler
-	block := (&models.MainBlock{}).Next(app.wallet.Addresses[0], CONST_COINBASE_REWARD)
-	app.blockChannel <- block
+	block := app.rescanChain()
+	if block == nil {
+		seed := "myblockchainseed"
+		log.Print("Creating Genesis block...")
+		// make genesis block, send it to the block handler
+		block = &models.MainBlock{
+			BlockHash: seed,
+		}
+		block = block.Next(app.wallet.Addresses[0], CONST_COINBASE_REWARD)
+		if err := app.Update("block_0", []byte(block.PrevBlockHash)); err != nil {
+			panic(err)
+		}
+		block.Hash()
+		app.blockChannel <- block
+	}
 
-	log.Print("Genesis block created..")
+	log.Print("Genesis block created...")
+
+	var prevBlockHash string
 
 	for {
+		prevBlockHash = block.BlockHash
+
 		// create a new block
 		block = block.Next(app.wallet.Addresses[0], CONST_COINBASE_REWARD)
 		log.Print("Producing new block with height ", block.BlockHeight)
+
+		if prevBlockHash != block.PrevBlockHash {
+			panic("INVALID")
+		}
 
 		timer := time.NewTimer(duration)
 
@@ -41,8 +107,7 @@ func (app *App) initChain() {
 
 			case <- timer.C:
 
-					log.Print("BLOCK TIME LIMIT REACHED")
-
+					block.Hash()
 					app.blockChannel <- block
 
 				case tx := <- app.txChannel:
@@ -78,12 +143,13 @@ func (app *App) parseTransaction(tx *models.TX) error {
 
 			// grant /revoke
 			case "permission":
+
 				app.info.TotalNativeCurrency += CONST_COINBASE_REWARD
 
 				payload := output.Payload.(models.OutputPermission)
 				app.info.Lock()
 					app.info.GrantPermissions(output.Recipient, payload.Actions)
-					app.DebugJSON(app.info.Permissions(output.Recipient))
+					//app.DebugJSON(app.info.Permissions(output.Recipient))
 				app.info.Unlock()
 
 			case "coinbase":
@@ -106,13 +172,12 @@ func (app *App) blockHandler() {
 	for {
 		block := <- app.blockChannel
 
-		block.BlockHash = block.Hash()
-
 		log.Print("New Block:")
 		log.Print("")
 		app.DebugJSON(block)
 		log.Print("")
 
+		// only write to disk if this block is new
 		if err := app.PutBlock(block); err != nil {
 			panic(err)
 		}
@@ -124,8 +189,7 @@ func (app *App) blockHandler() {
 			app.info.BlockHash = block.BlockHash
 		app.info.Unlock()
 
-		log.Print("Written to database!")
-		log.Print("")
+//		log.Print("Written to database!")
 	}
 
 }
