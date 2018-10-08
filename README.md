@@ -24,7 +24,9 @@ GET /block/<blockHeight>
 GET /create/keypair
 
 POST /permission/grant
+```
 {
-	"address": <address>,
+	"address": "0350af209a983d4157e836b00be315624f849aaad950ca9b055597fdc97aa7edb7",
 	"actions": ["send", "receive", "mine"],
 }
+```
